@@ -33,16 +33,34 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
+          "backgroundColor": "#121212",
           "dark": {
-            "backgroundColor": "#000000"
+            "backgroundColor": "#121212"
           }
         }
-      ]
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app uses location to track your running distance and pace.",
+          "locationAlwaysPermission": "This app uses location in the background to track your runs.",
+          "locationWhenInUsePermission": "This app uses location to track your running distance and pace.",
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/notification-icon.png",
+          "color": "#FC4C02",
+          "defaultChannel": "default"
+        }
+      ],
+      "expo-task-manager"
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }
