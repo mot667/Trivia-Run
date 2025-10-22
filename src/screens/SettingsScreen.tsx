@@ -15,6 +15,7 @@ import {
     TextInput,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { stravaService } from '../services/strava';
 import { useSettingsStore } from '../state/useSettingsStore';
 import { theme } from '../theme';
 import {
@@ -28,6 +29,8 @@ export default function SettingsScreen() {
   const settings = useSettingsStore();
   const [showTriviaDialog, setShowTriviaDialog] = useState(false);
   const [showPresetDialog, setShowPresetDialog] = useState(false);
+  const [showCodeDialog, setShowCodeDialog] = useState(false);
+  const [authCode, setAuthCode] = useState('');
   
   // Local state for trivia timing configuration
   const [localConfig, setLocalConfig] = useState<TriviaTriggerConfig>({
@@ -77,6 +80,71 @@ export default function SettingsScreen() {
     const preset = TRIVIA_TIMING_PRESETS[presetName];
     setLocalConfig(preset);
     setShowPresetDialog(false);
+  };
+
+  const handleStravaConnect = async () => {
+    try {
+      // This will open the browser for OAuth
+      await stravaService.authenticateWithStrava();
+      
+      // Show instructions for manual code entry
+      Alert.alert(
+        'Strava Authorization',
+        'After authorizing in the browser:\n\n1. Copy the "code" value from the JSON response\n2. Come back to this app\n3. Click "Enter Code" to paste it',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Enter Code', 
+            onPress: () => {
+              setAuthCode('');
+              setShowCodeDialog(true);
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', 'An error occurred while connecting to Strava.');
+      console.error('Strava connection error:', error);
+    }
+  };
+
+  const handleSubmitAuthCode = async () => {
+    if (!authCode.trim()) {
+      Alert.alert('Error', 'Please enter a valid authorization code.');
+      return;
+    }
+
+    try {
+      setShowCodeDialog(false);
+      const success = await stravaService.completeOAuthWithCode(authCode.trim());
+      if (success) {
+        Alert.alert('Success', 'Connected to Strava successfully!');
+        setAuthCode('');
+      } else {
+        Alert.alert('Failed', 'Invalid authorization code. Please try again.');
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to complete Strava connection.');
+      console.error('Manual OAuth error:', error);
+    }
+  };
+
+  const handleStravaDisconnect = async () => {
+    Alert.alert(
+      'Disconnect Strava',
+      'Are you sure you want to disconnect from Strava?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Disconnect',
+          style: 'destructive',
+          onPress: async () => {
+            await stravaService.disconnectStrava();
+            Alert.alert('Disconnected', 'Successfully disconnected from Strava.');
+          },
+        },
+      ]
+    );
   };
 
   const renderTriviaTimingDialog = () => (
@@ -356,6 +424,84 @@ export default function SettingsScreen() {
         
         <Divider />
         
+        {/* Strava Integration Section */}
+        <List.Section>
+          <List.Subheader>Strava Integration</List.Subheader>
+          
+          {settings.stravaConnected ? (
+            <>
+              <List.Item
+                title="Connected to Strava"
+                description={settings.stravaAthleteName || 'Connected'}
+                left={() => <List.Icon icon="check-circle" color={theme.colors.success} />}
+                right={() => <List.Icon icon="chevron-right" />}
+                onPress={handleStravaDisconnect}
+              />
+              
+              <List.Item
+                title="Auto-Upload Runs"
+                description="Automatically upload completed runs to Strava"
+                left={() => <List.Icon icon="cloud-upload" />}
+                right={() => (
+                  <Switch
+                    value={settings.autoUploadToStrava}
+                    onValueChange={settings.setAutoUploadToStrava}
+                  />
+                )}
+              />
+            </>
+          ) : (
+            <List.Item
+              title="Connect to Strava"
+              description="Link your Strava account to automatically upload runs"
+              left={() => <List.Icon icon="link-variant" />}
+              right={() => <List.Icon icon="chevron-right" />}
+              onPress={handleStravaConnect}
+            />
+          )}
+        </List.Section>
+        
+        <Divider />
+        
+        {/* Strava Integration Section */}
+        <List.Section>
+          <List.Subheader>Strava Integration</List.Subheader>
+          
+          {settings.stravaConnected ? (
+            <>
+              <List.Item
+                title="Connected to Strava"
+                description={settings.stravaAthleteName || 'Connected'}
+                left={() => <List.Icon icon="check-circle" color={theme.colors.success} />}
+                right={() => <List.Icon icon="chevron-right" />}
+                onPress={handleStravaDisconnect}
+              />
+              
+              <List.Item
+                title="Auto-Upload Runs"
+                description="Automatically upload completed runs to Strava"
+                left={() => <List.Icon icon="cloud-upload" />}
+                right={() => (
+                  <Switch
+                    value={settings.autoUploadToStrava}
+                    onValueChange={settings.setAutoUploadToStrava}
+                  />
+                )}
+              />
+            </>
+          ) : (
+            <List.Item
+              title="Connect to Strava"
+              description="Link your Strava account to automatically upload runs"
+              left={() => <List.Icon icon="link-variant" />}
+              right={() => <List.Icon icon="chevron-right" />}
+              onPress={handleStravaConnect}
+            />
+          )}
+        </List.Section>
+        
+        <Divider />
+        
         {/* Reset Section */}
         <List.Section>
           <List.Subheader>Reset</List.Subheader>
@@ -387,6 +533,33 @@ export default function SettingsScreen() {
       </ScrollView>
       
       {renderTriviaTimingDialog()}
+      
+      {/* Strava Authorization Code Dialog */}
+      <Portal>
+        <Dialog visible={showCodeDialog} onDismiss={() => setShowCodeDialog(false)}>
+          <Dialog.Title>Enter Strava Authorization Code</Dialog.Title>
+          <Dialog.Content>
+            <Text style={{ marginBottom: 16 }}>
+              Paste the authorization code from the browser:
+            </Text>
+            <TextInput
+              mode="outlined"
+              value={authCode}
+              onChangeText={setAuthCode}
+              placeholder="Enter authorization code here..."
+              multiline
+              autoFocus
+              style={{ minHeight: 60 }}
+            />
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={() => setShowCodeDialog(false)}>Cancel</Button>
+            <Button mode="contained" onPress={handleSubmitAuthCode}>
+              Connect
+            </Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
     </SafeAreaView>
   );
 }

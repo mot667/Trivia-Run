@@ -32,6 +32,14 @@ export interface SettingsState {
   // Auto-upload settings
   autoUploadToStrava: boolean;
   
+  // Strava integration
+  stravaAccessToken?: string;
+  stravaRefreshToken?: string;
+  stravaTokenExpiry?: number;
+  stravaAthleteId?: string;
+  stravaAthleteName?: string;
+  stravaConnected: boolean;
+  
   // User profile
   weightKg: number;
   
@@ -61,6 +69,8 @@ export interface SettingsState {
   setHapticsEnabled: (enabled: boolean) => void;
   setVoiceSettings: (gender: 'male' | 'female', rate: number) => void;
   setAutoUploadToStrava: (enabled: boolean) => void;
+  setStravaTokens: (accessToken: string, refreshToken: string, expiresIn: number, athleteId: string, athleteName: string) => void;
+  clearStravaTokens: () => void;
   setWeightKg: (weight: number) => void;
   setOnboardingCompleted: (completed: boolean) => void;
   setLocationPermission: (granted: boolean) => void;
@@ -70,7 +80,7 @@ export interface SettingsState {
   resetToDefaults: () => void;
 }
 
-const defaultSettings: Omit<SettingsState, 'setUnits' | 'setPenaltySeconds' | 'setTriviaFrequency' | 'setTriviaTimeout' | 'setSpeechEnabled' | 'setHapticsEnabled' | 'setVoiceSettings' | 'setAutoUploadToStrava' | 'setWeightKg' | 'setOnboardingCompleted' | 'setLocationPermission' | 'setNotificationPermission' | 'setKeepScreenAwake' | 'setShowPaceInRealTime' | 'setTriviaTriggerType' | 'setTriviaDistanceRange' | 'setTriviaTimeRange' | 'setTriviaCountRange' | 'setTriviaFirstQuestionDelay' | 'setTriviaEnabled' | 'resetToDefaults'> = {
+const defaultSettings: Omit<SettingsState, 'setUnits' | 'setPenaltySeconds' | 'setTriviaFrequency' | 'setTriviaTimeout' | 'setSpeechEnabled' | 'setHapticsEnabled' | 'setVoiceSettings' | 'setAutoUploadToStrava' | 'setStravaTokens' | 'clearStravaTokens' | 'setWeightKg' | 'setOnboardingCompleted' | 'setLocationPermission' | 'setNotificationPermission' | 'setKeepScreenAwake' | 'setShowPaceInRealTime' | 'setTriviaTriggerType' | 'setTriviaDistanceRange' | 'setTriviaTimeRange' | 'setTriviaCountRange' | 'setTriviaFirstQuestionDelay' | 'setTriviaEnabled' | 'resetToDefaults'> = {
   units: 'metric',
   penaltySecondsPerWrongAnswer: 30,
   triviaFrequencyMinKm: 0.8,
@@ -92,6 +102,7 @@ const defaultSettings: Omit<SettingsState, 'setUnits' | 'setPenaltySeconds' | 's
   voiceGender: 'female',
   speechRate: 1.0,
   autoUploadToStrava: false,
+  stravaConnected: false,
   weightKg: 70,
   hasCompletedOnboarding: false,
   locationPermissionGranted: false,
@@ -144,6 +155,26 @@ export const useSettingsStore = create<SettingsState>()(
       setAutoUploadToStrava: (autoUploadToStrava) => 
         set({ autoUploadToStrava }),
       
+      setStravaTokens: (stravaAccessToken, stravaRefreshToken, expiresIn, stravaAthleteId, stravaAthleteName) => 
+        set({ 
+          stravaAccessToken,
+          stravaRefreshToken,
+          stravaTokenExpiry: Date.now() + (expiresIn * 1000),
+          stravaAthleteId,
+          stravaAthleteName,
+          stravaConnected: true,
+        }),
+      
+      clearStravaTokens: () => 
+        set({ 
+          stravaAccessToken: undefined,
+          stravaRefreshToken: undefined,
+          stravaTokenExpiry: undefined,
+          stravaAthleteId: undefined,
+          stravaAthleteName: undefined,
+          stravaConnected: false,
+        }),
+      
       setWeightKg: (weightKg) => set({ weightKg }),
       
       setOnboardingCompleted: (hasCompletedOnboarding) => 
@@ -187,6 +218,12 @@ export const useSettingsStore = create<SettingsState>()(
         voiceGender: state.voiceGender,
         speechRate: state.speechRate,
         autoUploadToStrava: state.autoUploadToStrava,
+        stravaAccessToken: state.stravaAccessToken,
+        stravaRefreshToken: state.stravaRefreshToken,
+        stravaTokenExpiry: state.stravaTokenExpiry,
+        stravaAthleteId: state.stravaAthleteId,
+        stravaAthleteName: state.stravaAthleteName,
+        stravaConnected: state.stravaConnected,
         weightKg: state.weightKg,
         hasCompletedOnboarding: state.hasCompletedOnboarding,
         keepScreenAwake: state.keepScreenAwake,

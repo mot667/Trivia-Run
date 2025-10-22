@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Trivia Run - Strava Authentication</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #121212;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 400px;
+            padding: 32px;
+        }
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FC4C02;
+            margin-bottom: 24px;
+        }
+        .loading {
+            color: #666;
+            margin: 16px 0;
+        }
+        .success {
+            color: #4CAF50;
+        }
+        .error {
+            color: #f44336;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">🏃‍♂️ Trivia Run</div>
+        <div id="status" class="loading">Completing Strava authentication...</div>
+        <div id="message"></div>
+    </div>
+
+    <script>
+        function updateStatus(message, isError = false) {
+            const statusEl = document.getElementById('status');
+            const messageEl = document.getElementById('message');
+            
+            statusEl.textContent = message;
+            statusEl.className = isError ? 'error' : 'success';
+            
+            if (!isError) {
+                messageEl.innerHTML = '<p>You can close this window and return to the app.</p>';
+            }
+        }
+
+        // Parse URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        const error = urlParams.get('error');
+        const state = urlParams.get('state');
+
+        if (error) {
+            updateStatus(`Authentication failed: ${error}`, true);
+        } else if (code) {
+            updateStatus('✅ Authentication successful!');
+            
+            // Try to redirect back to the app
+            setTimeout(() => {
+                const appUrl = `triviarun://auth?code=${encodeURIComponent(code)}`;
+                window.location.href = appUrl;
+            }, 1000);
+        } else {
+            updateStatus('No authorization code received', true);
+        }
+    </script>
+</body>
+</html>

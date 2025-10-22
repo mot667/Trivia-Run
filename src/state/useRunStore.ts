@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import { stravaService } from '../services/strava';
 import { DistancePoint } from '../utils/distance';
 import { generateRandomTriggerDistance } from '../utils/rng';
 import { Timer } from '../utils/time';
@@ -238,17 +239,35 @@ export const useRunStore = create<RunState>()(
       const finalElapsedSeconds = timer?.stop() || currentRun.elapsedSeconds;
       const endTime = Date.now();
       
+      const finishedRun = {
+        ...currentRun,
+        status: 'finished' as const,
+        endTime,
+        elapsedSeconds: finalElapsedSeconds,
+      };
+      
       set({
-        currentRun: {
-          ...currentRun,
-          status: 'finished',
-          endTime,
-          elapsedSeconds: finalElapsedSeconds,
-        },
+        currentRun: finishedRun,
         timer: null,
         isLocationTracking: false,
         showTriviaModal: false,
       });
+      
+      // Auto-upload to Strava if enabled
+      const settings = useSettingsStore.getState();
+      if (settings.autoUploadToStrava && settings.stravaConnected) {
+        stravaService.uploadRun(finishedRun)
+          .then(activity => {
+            if (activity) {
+              console.log('✅ Run automatically uploaded to Strava:', activity.id);
+            } else {
+              console.error('❌ Failed to upload run to Strava');
+            }
+          })
+          .catch(error => {
+            console.error('❌ Strava upload error:', error);
+          });
+      }
     },
     
     updateGPSPosition: (position) => {

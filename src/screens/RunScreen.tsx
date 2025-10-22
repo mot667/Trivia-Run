@@ -5,12 +5,12 @@ import React, { useCallback, useEffect } from 'react';
 import {
     Alert,
     BackHandler,
-    SafeAreaView,
     ScrollView,
     StyleSheet,
     View,
 } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import {
     EndRunButton,
     PauseRunButton,
@@ -242,8 +242,8 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
           style: 'destructive',
           onPress: () => {
             finishRun();
-            // Navigate to the Summary tab (explore tab shows SummaryScreen)
-            navigation.navigate('explore');
+            // Navigate to home tab to start a new run
+            navigation.navigate('index');
           },
         },
       ]
