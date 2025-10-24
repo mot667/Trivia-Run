@@ -15,7 +15,7 @@ import { getCategoryEmoji, getDifficultyColor } from '../services/trivia';
 import { TriviaQuestion } from '../state/useRunStore';
 import { useSettingsStore } from '../state/useSettingsStore';
 import { shadows, theme } from '../theme';
-import { SkipTriviaButton, TriviaAnswerButton } from './BigButton';
+import { TriviaAnswerButton } from './BigButton';
 
 interface TriviaModalProps {
   visible: boolean;
@@ -51,13 +51,17 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
       return;
     }
     
+    // Reset timer state when a new question appears
     setStartTime(Date.now());
     setTimeRemaining(timeoutSeconds);
+    console.log('🎯 Starting trivia timer with', timeoutSeconds, 'seconds'); // Debug log
     
+    // Clear any existing timer and start a new one
     const timer = setInterval(() => {
       setTimeRemaining(prev => {
         if (prev <= 1) {
           clearInterval(timer);
+          console.log('⏱️ Trivia timeout triggered!'); // Debug log
           onTimeout();
           return 0;
         }
@@ -66,7 +70,7 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [visible, question, timeoutSeconds, onTimeout]);
+  }, [visible, question?.id, timeoutSeconds, onTimeout]);
   
   // Speech effect
   useEffect(() => {
@@ -86,6 +90,9 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
   const handleAnswer = async (selectedIndex: number) => {
     if (!startTime) return;
     
+    // Stop any ongoing speech immediately
+    speechService.stop();
+    
     const timeToAnswer = Math.floor((Date.now() - startTime) / 1000);
     
     if (hapticsEnabled) {
@@ -93,14 +100,6 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
     }
     
     onAnswer(selectedIndex, timeToAnswer);
-  };
-  
-  const handleSkip = async () => {
-    if (hapticsEnabled) {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    }
-    
-    onSkip();
   };
   
   if (!visible || !question) {
@@ -152,15 +151,15 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
             
             {/* Timer */}
             <View style={styles.timerContainer}>
-              <View style={styles.timerInfo}>
+              <View style={[styles.timerCircle, { borderColor: progressColor }]}>
                 <MaterialIcons
                   name="timer"
-                  size={20}
+                  size={32}
                   color={progressColor}
                   style={styles.timerIcon}
                 />
                 <Text style={[styles.timerText, { color: progressColor }]}>
-                  {timeRemaining}s
+                  {timeRemaining}
                 </Text>
               </View>
               <ProgressBar
@@ -168,6 +167,9 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
                 color={progressColor}
                 style={styles.progressBar}
               />
+              <Text style={[styles.timerHint, { color: progressColor }]}>
+                {timeRemaining <= 10 ? 'Answer quickly!' : 'Time remaining'}
+              </Text>
             </View>
             
             {/* Question */}
@@ -195,13 +197,7 @@ export const TriviaModal: React.FC<TriviaModalProps> = ({
               ))}
             </View>
             
-            {/* Actions */}
-            <View style={styles.actionsContainer}>
-              <SkipTriviaButton
-                onPress={handleSkip}
-                disabled={timeRemaining <= 0}
-              />
-            </View>
+
           </Surface>
         </View>
       </SafeAreaView>
@@ -260,24 +256,36 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   timerContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  timerInfo: {
-    flexDirection: 'row',
+    marginBottom: theme.spacing.xl,
     alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: theme.spacing.sm,
   },
   timerIcon: {
-    marginRight: theme.spacing.xs,
+    marginBottom: -4,
+  },
+  timerCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 3,
+    justifyContent: 'center',
+    alignItems: 'center',
+    alignSelf: 'center',
+    marginBottom: theme.spacing.md,
   },
   timerText: {
-    ...theme.typography.titleLarge,
-    fontWeight: '600',
+    ...theme.typography.headlineMedium,
+    fontWeight: '700',
+    marginTop: theme.spacing.xs,
+  },
+  timerHint: {
+    ...theme.typography.bodySmall,
+    textAlign: 'center',
+    marginTop: theme.spacing.sm,
+    fontWeight: '500',
   },
   progressBar: {
-    height: 6,
-    borderRadius: 3,
+    height: 8,
+    borderRadius: 4,
     backgroundColor: theme.colors.surfaceVariant,
   },
   questionContainer: {
@@ -291,13 +299,7 @@ const styles = StyleSheet.create({
     lineHeight: 28,
   },
   optionsContainer: {
-    marginBottom: theme.spacing.lg,
-  },
-  actionsContainer: {
-    alignItems: 'center',
-    paddingTop: theme.spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.divider,
+    marginBottom: theme.spacing.xl,
   },
 });
 

@@ -257,9 +257,9 @@ export const useRunStore = create<RunState>()(
       const settings = useSettingsStore.getState();
       if (settings.autoUploadToStrava && settings.stravaConnected) {
         stravaService.uploadRun(finishedRun)
-          .then(activity => {
-            if (activity) {
-              console.log('✅ Run automatically uploaded to Strava:', activity.id);
+          .then(success => {
+            if (success) {
+              console.log('✅ Run automatically uploaded to Strava');
             } else {
               console.error('❌ Failed to upload run to Strava');
             }
@@ -488,7 +488,7 @@ export const useRunStore = create<RunState>()(
     
     updateElapsedTime: (elapsedSeconds) => {
       const { currentRun } = get();
-      if (!currentRun) return;
+      if (!currentRun || currentRun.status !== 'running') return;
       
       set({
         currentRun: {
@@ -507,7 +507,7 @@ export const useRunStore = create<RunState>()(
         timer: null,
         showTriviaModal: false,
         isLocationTracking: false,
-        gpsStatus: 'disabled',
+        // Don't reset GPS status - keep the current GPS state
         lastGPSUpdate: 0,
       });
     },

@@ -203,6 +203,15 @@ export async function announceIncorrectAnswer(penaltySeconds: number): Promise<v
   });
 }
 
+export async function announceChallengeExplanation(): Promise<void> {
+  const explanation = 'Welcome to Trivia Run! During your run, you\'ll receive trivia questions. Answer correctly to keep your time clean, or get penalty time for wrong answers. You have 30 seconds per question. Let\'s begin!';
+  
+  await speechService.speak(explanation, {
+    rate: 0.9, // Slightly slower for comprehension
+    pitch: 1.0,
+  });
+}
+
 export async function announceRunStart(): Promise<void> {
   await speechService.speakEncouragement('Run started! Good luck with your trivia challenges!');
 }

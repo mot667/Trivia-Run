@@ -1,6 +1,7 @@
 import { useFocusEffect } from '@react-navigation/native';
 import * as KeepAwake from 'expo-keep-awake';
 import * as Location from 'expo-location';
+import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 import {
     Alert,
@@ -28,18 +29,17 @@ import {
 import TriviaConfigDisplay from '../components/TriviaConfigDisplay';
 import { TriviaModal } from '../components/TriviaModal';
 import { locationService } from '../services/location';
-import { announceRunPause, announceRunResume, announceRunStart } from '../services/speech';
+import { announceChallengeExplanation, announceRunPause, announceRunResume, announceRunStart } from '../services/speech';
 import { triviaService } from '../services/trivia';
 import { useRunStore } from '../state/useRunStore';
 import { useSettingsStore } from '../state/useSettingsStore';
 import { theme } from '../theme';
 import { formatElapsedTime } from '../utils/time';
 
-interface RunScreenProps {
-  navigation: any;
-}
+interface RunScreenProps {}
 
-export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
+export const RunScreen: React.FC<RunScreenProps> = () => {
+  const router = useRouter();
   const {
     currentRun,
     gpsStatus,
@@ -51,7 +51,6 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
     finishRun,
     presentTriviaQuestion,
     answerTriviaQuestion,
-    skipTriviaQuestion,
     timeoutTriviaQuestion,
     dismissTriviaModal,
     setGPSStatus,
@@ -120,7 +119,7 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
             'Are you sure you want to exit? Your run is still active.',
             [
               { text: 'Stay', style: 'cancel' },
-              { text: 'Exit', style: 'destructive', onPress: () => navigation.goBack() },
+              { text: 'Exit', style: 'destructive', onPress: () => router.back() },
             ]
           );
           return true; // Prevent default back action
@@ -130,7 +129,7 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
       
       const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
       return () => subscription.remove();
-    }, [currentRun, navigation])
+    }, [currentRun, router])
   );
   
   // Location tracking effect
@@ -141,6 +140,20 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
       locationService.stopTracking();
     }
   }, [isLocationTracking]);
+  
+  // Challenge explanation effect - announce once at the start of a new run
+  useEffect(() => {
+    if (currentRun && currentRun.status === 'running' && speechEnabled) {
+      // Only explain if this is a fresh run (no trivia results yet)
+      if (currentRun.triviaResults.length === 0 && currentRun.elapsedSeconds < 10) {
+        const timer = setTimeout(() => {
+          announceChallengeExplanation();
+        }, 3000); // Wait 3 seconds after run starts
+        
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [currentRun?.status, speechEnabled, currentRun?.id]);
   
   // Trivia trigger effect
   useEffect(() => {
@@ -242,8 +255,8 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
           style: 'destructive',
           onPress: () => {
             finishRun();
-            // Navigate to home tab to start a new run
-            navigation.navigate('index');
+            // Navigate to summary screen (explore tab)
+            router.push('/explore');
           },
         },
       ]
@@ -254,9 +267,7 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
     answerTriviaQuestion(selectedIndex, timeToAnswer);
   };
   
-  const handleTriviaSkip = () => {
-    skipTriviaQuestion();
-  };
+
   
   const handleTriviaTimeout = () => {
     timeoutTriviaQuestion();
@@ -407,7 +418,7 @@ export const RunScreen: React.FC<RunScreenProps> = ({ navigation }) => {
           question={currentRun?.activeTriviaQuestion || null}
           timeoutSeconds={triviaTimeoutSeconds}
           onAnswer={handleTriviaAnswer}
-          onSkip={handleTriviaSkip}
+          onSkip={() => {}} // No-op since we removed skip functionality
           onTimeout={handleTriviaTimeout}
           onDismiss={dismissTriviaModal}
         />

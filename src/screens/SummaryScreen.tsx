@@ -1,5 +1,6 @@
-import React from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import React, { useState } from 'react';
+import { Alert, SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { BigButton } from '../components/BigButton';
 import {
@@ -7,18 +8,19 @@ import {
     DistanceStatCard,
     PaceStatCard
 } from '../components/StatCard';
+import { stravaService } from '../services/strava';
 import { useRunStore } from '../state/useRunStore';
 import { useSettingsStore } from '../state/useSettingsStore';
 import { theme } from '../theme';
 import { formatElapsedTime, formatTimeWithPenalty } from '../utils/time';
 
-interface SummaryScreenProps {
-  navigation: any;
-}
+interface SummaryScreenProps {}
 
-export const SummaryScreen: React.FC<SummaryScreenProps> = ({ navigation }) => {
+export const SummaryScreen: React.FC<SummaryScreenProps> = () => {
+  const router = useRouter();
   const { currentRun, resetRun } = useRunStore();
-  const { units } = useSettingsStore();
+  const { units, stravaConnected } = useSettingsStore();
+  const [isUploadingToStrava, setIsUploadingToStrava] = useState(false);
   
   if (!currentRun) {
     return (
@@ -27,7 +29,7 @@ export const SummaryScreen: React.FC<SummaryScreenProps> = ({ navigation }) => {
           <Text style={styles.errorText}>No run data available</Text>
           <BigButton
             title="Back to Home"
-            onPress={() => navigation.navigate('Run')}
+            onPress={() => router.push('/')}
             variant="primary"
           />
         </View>
@@ -37,7 +39,7 @@ export const SummaryScreen: React.FC<SummaryScreenProps> = ({ navigation }) => {
   
   const handleNewRun = () => {
     resetRun();
-    navigation.navigate('Run');
+    router.push('/');
   };
   
   const handleSaveLocally = () => {
@@ -45,9 +47,45 @@ export const SummaryScreen: React.FC<SummaryScreenProps> = ({ navigation }) => {
     console.log('Save locally');
   };
   
-  const handleUploadToStrava = () => {
-    // TODO: Implement Strava upload
-    navigation.navigate('StravaAuth');
+  const handleUploadToStrava = async () => {
+    if (!stravaConnected) {
+      router.push('/auth');
+      return;
+    }
+    
+    if (!currentRun) {
+      Alert.alert('Error', 'No run data available to upload.');
+      return;
+    }
+    
+    setIsUploadingToStrava(true);
+    
+    try {
+      const success = await stravaService.uploadRun(currentRun);
+      
+      if (success) {
+        Alert.alert(
+          'Upload Successful! 🎉',
+          'Your run has been uploaded to Strava successfully.',
+          [{ text: 'OK' }]
+        );
+      } else {
+        Alert.alert(
+          'Upload Failed',
+          'Failed to upload your run to Strava. Please try again later.',
+          [{ text: 'OK' }]
+        );
+      }
+    } catch (error) {
+      console.error('Error uploading to Strava:', error);
+      Alert.alert(
+        'Upload Error',
+        'An error occurred while uploading to Strava. Please check your connection and try again.',
+        [{ text: 'OK' }]
+      );
+    } finally {
+      setIsUploadingToStrava(false);
+    }
   };
   
   const handleShare = () => {
@@ -187,11 +225,13 @@ export const SummaryScreen: React.FC<SummaryScreenProps> = ({ navigation }) => {
             />
             
             <BigButton
-              title="Upload to Strava"
+              title={isUploadingToStrava ? 'Uploading...' : (stravaConnected ? 'Upload to Strava' : 'Connect Strava')}
               onPress={handleUploadToStrava}
               variant="secondary"
               size="medium"
-              icon="upload"
+              icon={isUploadingToStrava ? 'sync' : (stravaConnected ? 'upload' : 'link')}
+              loading={isUploadingToStrava}
+              disabled={isUploadingToStrava}
             />
           </View>
           

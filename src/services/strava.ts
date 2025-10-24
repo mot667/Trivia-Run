@@ -272,15 +272,29 @@ class StravaService {
   }
 
   /**
-   * Upload a run to Strava
+   * Upload a completed run to Strava
    */
-  async uploadRun(runData: RunData): Promise<StravaActivity | null> {
+  async uploadRun(runData: RunData): Promise<boolean> {
     try {
-      const accessToken = await this.getValidAccessToken();
+      const settings = useSettingsStore.getState();
       
-      if (!accessToken) {
-        console.error('No valid Strava access token');
-        return null;
+      if (!settings.stravaAccessToken) {
+        console.log('❌ No Strava access token available');
+        return false;
+      }
+      
+      // Check if token needs refresh (expires in 6 hours)
+      const now = Date.now();
+      const tokenExpiry = settings.stravaTokenExpiry || 0;
+      const fiveMinutes = 5 * 60 * 1000; // 5 minutes in milliseconds
+      
+      if (now > tokenExpiry - fiveMinutes) { // Refresh 5 minutes before expiry
+        console.log('🔄 Strava token needs refresh, attempting refresh...');
+        const refreshed = await this.refreshAccessToken();
+        if (!refreshed) {
+          console.log('❌ Failed to refresh Strava token');
+          return false;
+        }
       }
 
       // Convert run data to Strava activity format
@@ -289,7 +303,7 @@ class StravaService {
       const response = await fetch(`${STRAVA_API_BASE}/activities`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${accessToken}`,
+          'Authorization': `Bearer ${settings.stravaAccessToken}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(activityData),
@@ -297,15 +311,16 @@ class StravaService {
 
       if (response.ok) {
         const activity: StravaActivity = await response.json();
-        console.log('✅ Run uploaded to Strava:', activity.id);
-        return activity;
+        console.log('✅ Run uploaded to Strava successfully!');
+        console.log('Activity ID:', activity.id);
+        return true;
       } else {
         console.error('Strava upload failed:', response.status, await response.text());
-        return null;
+        return false;
       }
     } catch (error) {
       console.error('Strava upload error:', error);
-      return null;
+      return false;
     }
   }
 
