@@ -12,6 +12,7 @@ export default {
       supportsTablet: true,
     },
     android: {
+      package: "com.triviarun.app",
       adaptiveIcon: {
         backgroundColor: "#E6F4FE",
         foregroundImage: "./assets/images/android-icon-foreground.png",
@@ -66,6 +67,9 @@ export default {
       typedRoutes: true,
     },
     extra: {
+      eas: {
+        projectId: "0ef228f6-de7b-42fa-8519-e9912048289b",
+      },
       stravaClientId: process.env.STRAVA_CLIENT_ID || "your_client_id_here",
       stravaClientSecret: process.env.STRAVA_CLIENT_SECRET || "your_client_secret_here",
     },
