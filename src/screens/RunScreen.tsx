@@ -4,27 +4,27 @@ import * as Location from 'expo-location';
 import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect } from 'react';
 import {
-    Alert,
-    BackHandler,
-    ScrollView,
-    StyleSheet,
-    View,
+  Alert,
+  BackHandler,
+  ScrollView,
+  StyleSheet,
+  View,
 } from 'react-native';
 import { Surface, Text } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
-    EndRunButton,
-    PauseRunButton,
-    ResumeRunButton,
-    StartRunButton,
+  EndRunButton,
+  PauseRunButton,
+  ResumeRunButton,
+  StartRunButton,
 } from '../components/BigButton';
 import { GpsLockPill, GpsSearchingIndicator } from '../components/GpsLockPill';
 import {
-    CaloriesStatCard,
-    DistanceStatCard,
-    PaceStatCard,
-    PenaltyStatCard,
-    TimeStatCard,
+  CaloriesStatCard,
+  DistanceStatCard,
+  PaceStatCard,
+  PenaltyStatCard,
+  TimeStatCard,
 } from '../components/StatCard';
 import TriviaConfigDisplay from '../components/TriviaConfigDisplay';
 import { TriviaModal } from '../components/TriviaModal';
@@ -98,7 +98,7 @@ export const RunScreen: React.FC<RunScreenProps> = () => {
             setGPSStatus('medium');
           }
         } else {
-          setGPSStatus('poor');
+          setGPSStatus('poor')
         }
       } catch (error) {
         console.error('Error initializing GPS:', error);

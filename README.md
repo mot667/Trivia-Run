@@ -1,50 +1,84 @@
-# Welcome to your Expo app 👋
+# TriviaRun
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native running app that quizzes you mid-run and adds penalty time for wrong answers. Track your distance and pace, answer trivia challenges read aloud by the app, and optionally upload your (penalised) results to Strava.
 
-## Get started
+**[Watch the demo on YouTube](https://www.youtube.com/watch?v=EQmyfInSnnQ)**
 
-1. Install dependencies
+---
 
-   ```bash
-   npm install
-   ```
+## Features
 
-2. Start the app
+- **GPS run tracking** — real-time distance, pace, elapsed time, and calorie estimates
+- **Trivia challenges** — questions are read aloud via text-to-speech at configurable intervals
+- **Penalty system** — wrong answers add seconds to your final run time
+- **Strava integration** — OAuth 2.0 login and automatic activity upload on run completion
+- **Configurable settings** — units (km/mi), trivia frequency, penalty duration, voice options, haptics
+- **Run summary** — post-run breakdown showing base time vs. total time with penalties
 
-   ```bash
-   npx expo start
-   ```
+## Tech Stack
 
-In the output, you'll find options to open the app in a
+| Layer | Technology |
+|---|---|
+| Framework | React Native + Expo SDK 54 |
+| Language | TypeScript |
+| Navigation | Expo Router (file-based) |
+| State | Zustand |
+| UI | React Native Paper |
+| GPS | expo-location (background tracking) |
+| Speech | expo-speech (text-to-speech) |
+| Auth | expo-auth-session (Strava OAuth 2.0) |
+| Notifications | expo-notifications |
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Getting Started
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+### Prerequisites
 
-## Get a fresh project
+- Node.js 18+
+- Expo CLI (`npm install -g expo-cli`)
+- iOS Simulator / Android Emulator, or the [Expo Go](https://expo.dev/go) app
 
-When you're ready, run:
+### Installation
 
 ```bash
-npm run reset-project
+git clone https://github.com/your-username/triviaRun.git
+cd triviaRun
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### Strava Integration (optional)
 
-## Learn more
+1. Create a Strava app at [strava.com/settings/api](https://www.strava.com/settings/api)
+2. Copy `.env.example` to `.env` and fill in your credentials:
 
-To learn more about developing your project with Expo, look at the following resources:
+```bash
+cp .env.example .env
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+```env
+STRAVA_CLIENT_ID=your_client_id
+STRAVA_CLIENT_SECRET=your_client_secret
+```
 
-## Join the community
+### Run the app
 
-Join our community of developers creating universal apps.
+```bash
+npx expo start
+```
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+Then press `i` for iOS simulator, `a` for Android emulator, or scan the QR code with Expo Go.
+
+## Project Structure
+
+```
+src/
+  components/     # Reusable UI components (StatCard, TriviaModal, etc.)
+  screens/        # RunScreen, SummaryScreen, SettingsScreen
+  services/       # GPS, speech, trivia, Strava API
+  state/          # Zustand stores (run state, settings)
+  utils/          # Distance, pace, time, RNG helpers
+app/              # Expo Router file-based routes
+```
+
+## License
+
+MIT

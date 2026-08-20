@@ -1,5 +1,6 @@
 import * as Speech from 'expo-speech';
 import { Platform } from 'react-native';
+import { DEBUG_CONFIG, logDemo, logSuccess, logWarning, spamConsole } from '../config/debug';
 
 export interface SpeechService {
   speak: (text: string, options?: SpeechOptions) => Promise<void>;
@@ -36,6 +37,19 @@ class SpeechServiceImpl implements SpeechService {
         await Speech.stop();
       }
       
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logDemo('🗣️  SPEECH SYNTHESIS ACTIVATED');
+        logDemo(`   Text: "${text}"`);
+        logDemo(`   Rate: ${options.rate || 1.0}x`);
+        logDemo(`   Pitch: ${options.pitch || 1.0}x`);
+        spamConsole('🎙️  Generating speech waveforms', 3);
+        
+        if (DEBUG_CONFIG.FUNNY_MESSAGES && text.includes('penalty')) {
+          logWarning('😈 Oh no! About to tell them they got it wrong!');
+          logWarning('Their face is gonna be priceless! 😂');
+        }
+      }
+      
       this.isSpeakingState = true;
       
       const speechOptions: Speech.SpeechOptions = {
@@ -45,12 +59,21 @@ class SpeechServiceImpl implements SpeechService {
         voice: options.voice,
         onStart: () => {
           this.isSpeakingState = true;
+          if (DEBUG_CONFIG.DEMO_MODE) {
+            logSuccess('🔊 Speech started!');
+          }
         },
         onDone: () => {
           this.isSpeakingState = false;
+          if (DEBUG_CONFIG.DEMO_MODE) {
+            logSuccess('✅ Speech completed!');
+          }
         },
         onStopped: () => {
           this.isSpeakingState = false;
+          if (DEBUG_CONFIG.DEMO_MODE) {
+            logWarning('⏹️  Speech stopped mid-sentence!');
+          }
         },
         onError: (error) => {
           console.error('Speech error:', error);
@@ -255,4 +278,57 @@ export function getVoiceForGender(gender: 'male' | 'female', voices: Voice[]): V
   }
   
   return voices[0]; // Fallback to first available voice
+}
+
+// 🎬 DEMO MODE: Funny announcements for YouTube video
+export async function sayFunnyDemoMessage(): Promise<void> {
+  if (!DEBUG_CONFIG.DEMO_MODE || !DEBUG_CONFIG.FUNNY_MESSAGES) return;
+  
+  const funnyMessages = [
+    'Hey! Your friend has no idea I\'m about to ruin their Strava time. This is gonna be hilarious!',
+    'Wrong answer! I just added 10 seconds to your run. Your friends will wonder why you\'re so slow today!',
+    'Fun fact: Every wrong answer makes you slower. Good luck explaining that on Strava!',
+    'Oops! Another wrong answer. At this rate, your time will be... not great!',
+    'Did you know? This app is specifically designed to make your friend look bad on Strava. Mission accomplished!',
+    'Plot twist: The harder you think, the slower you run. That\'s not how fitness works!',
+    'Your legs say run fast, but the trivia says slow down. Science!',
+    'Warning: Your Strava friends are about to see a very confusing race time.',
+    'Achievement unlocked: Most creative excuse for a slow run!',
+    'This message brought to you by: Your friend who set up this whole prank!',
+  ];
+  
+  const message = funnyMessages[Math.floor(Math.random() * funnyMessages.length)];
+  
+  logDemo('🎭 ACTIVATING FUNNY DEMO MESSAGE FOR YOUTUBE VIDEO!');
+  logDemo(`   Message: "${message}"`);
+  spamConsole('😂 Preparing to roast your friend', 5);
+  
+  await speechService.speak(message, {
+    rate: 1.0,
+    pitch: 1.1,
+  });
+  
+  logSuccess('✅ Funny message delivered! Check your friend\'s reaction! 😂');
+}
+
+// Demo mode: Say something outrageous for the montage
+export async function runDemoMontage(): Promise<void> {
+  if (!DEBUG_CONFIG.DEMO_MODE) return;
+  
+  logDemo('═══════════════════════════════════════');
+  logDemo('🎬 STARTING DEMO MONTAGE SEQUENCE');
+  logDemo('═══════════════════════════════════════');
+  
+  await speechService.speak('Initializing Trivia Run... Prepare to have your mind blown!', { rate: 1.2, pitch: 1.0 });
+  
+  spamConsole('🚀 Loading awesome features', 10);
+  
+  logDemo('Feature 1: GPS tracking that actually works!');
+  logDemo('Feature 2: Trivia questions that will make you think!');
+  logDemo('Feature 3: Penalties that will make you cry!');
+  logDemo('Feature 4: Strava integration that will expose you!');
+  
+  await speechService.speak('Warning: This app contains dangerous levels of fun and embarrassment!', { rate: 0.9, pitch: 1.3 });
+  
+  logSuccess('✅ Montage sequence complete! That\'s a wrap! 🎬');
 }

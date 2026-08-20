@@ -1,28 +1,29 @@
 import React, { useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import {
-    Appbar,
-    Button,
-    Card,
-    Chip,
-    Dialog,
-    Divider,
-    List,
-    Portal,
-    SegmentedButtons,
-    Switch,
-    Text,
-    TextInput,
+  Appbar,
+  Button,
+  Card,
+  Chip,
+  Dialog,
+  Divider,
+  List,
+  Portal,
+  SegmentedButtons,
+  Switch,
+  Text,
+  TextInput,
 } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { YoutubeDemoControls } from '../demo/DemoControls';
 import { stravaService } from '../services/strava';
 import { useSettingsStore } from '../state/useSettingsStore';
 import { theme } from '../theme';
 import {
-    getTriviaTimingDescription,
-    TRIVIA_TIMING_PRESETS,
-    validateTriviaConfig,
-    type TriviaTriggerConfig,
+  getTriviaTimingDescription,
+  TRIVIA_TIMING_PRESETS,
+  validateTriviaConfig,
+  type TriviaTriggerConfig,
 } from '../utils/trivia-timing';
 
 export default function SettingsScreen() {
@@ -323,6 +324,9 @@ export default function SettingsScreen() {
       </Appbar.Header>
       
       <ScrollView style={{ flex: 1 }}>
+        {/* YouTube Demo Controls - Only shows when DEMO_MODE is enabled */}
+        <YoutubeDemoControls />
+        
         {/* Trivia Settings Section */}
         <List.Section>
           <List.Subheader>Trivia Questions</List.Subheader>

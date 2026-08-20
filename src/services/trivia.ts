@@ -1,3 +1,4 @@
+import { DEBUG_CONFIG, logDemo, logSuccess, logWarning, spamConsole } from '../config/debug';
 import { randomFromArray, shuffleArray } from '../utils/rng';
 
 export interface TriviaQuestion {
@@ -262,6 +263,24 @@ class TriviaServiceImpl implements TriviaService {
       ];
       
       console.log(`Loaded ${this.allQuestions.length} trivia questions`);
+      
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logDemo('═══════════════════════════════════════');
+        logDemo('🧠 TRIVIA BANK INITIALIZATION');
+        logDemo('═══════════════════════════════════════');
+        spamConsole('📚 Loading question database', 5);
+        logDemo(`   Sports questions: ${this.triviaBank.sports.length}`);
+        logDemo(`   Science questions: ${this.triviaBank.science.length}`);
+        logDemo(`   History questions: ${this.triviaBank.history.length}`);
+        logDemo(`   Geography questions: ${this.triviaBank.geography.length}`);
+        logDemo(`   Entertainment questions: ${this.triviaBank.entertainment.length}`);
+        logDemo(`   Total arsenal: ${this.allQuestions.length} questions`);
+        logSuccess('✅ Trivia bank loaded and ready to confuse runners!');
+        
+        if (DEBUG_CONFIG.FUNNY_MESSAGES) {
+          logDemo('💭 These questions are gonna make them sweat... mentally! 😂');
+        }
+      }
     } catch (error) {
       console.error('Error loading trivia bank:', error);
     }
@@ -269,6 +288,15 @@ class TriviaServiceImpl implements TriviaService {
   
   getRandomQuestion(category?: string): TriviaQuestion | null {
     try {
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logDemo('🎲 RANDOM QUESTION GENERATOR ACTIVATED');
+        if (category) {
+          logDemo(`   Category filter: ${category}`);
+        } else {
+          logDemo('   Mode: Random from all categories');
+        }
+      }
+      
       let availableQuestions: TriviaQuestion[];
       
       if (category) {
@@ -282,9 +310,19 @@ class TriviaServiceImpl implements TriviaService {
         q => !this.usedQuestions.has(q.id)
       );
       
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logDemo(`   Available questions: ${availableQuestions.length}`);
+        logDemo(`   Unused questions: ${unusedQuestions.length}`);
+        logDemo(`   Already asked: ${this.usedQuestions.size}`);
+      }
+      
       // If all questions have been used, reset the used set
       if (unusedQuestions.length === 0) {
         this.usedQuestions.clear();
+        if (DEBUG_CONFIG.DEMO_MODE) {
+          logWarning('⚠️  All questions exhausted! Resetting question pool...');
+          spamConsole('🔄 Recycling questions', 3);
+        }
         if (category) {
           return randomFromArray(this.getQuestionsByCategory(category)) || null;
         } else {
@@ -298,6 +336,25 @@ class TriviaServiceImpl implements TriviaService {
         
         // Shuffle the options to prevent memorization
         const shuffledQuestion = this.shuffleQuestionOptions(question);
+        
+        if (DEBUG_CONFIG.DEMO_MODE) {
+          logSuccess(`✅ Question selected: ${question.id}`);
+          logDemo(`   Q: "${question.question}"`);
+          logDemo(`   Category: ${question.category} | Difficulty: ${question.difficulty}`);
+          spamConsole('🎯 Preparing to challenge runner', 3);
+          
+          if (DEBUG_CONFIG.FUNNY_MESSAGES) {
+            const difficulty = question.difficulty;
+            if (difficulty === 'hard') {
+              logWarning('😈 Oh this is a HARD one! Good luck! 😂');
+            } else if (difficulty === 'medium') {
+              logDemo('🤔 Medium difficulty... they might struggle!');
+            } else {
+              logDemo('😊 Easy question... or is it? 😏');
+            }
+          }
+        }
+        
         return shuffledQuestion;
       }
       

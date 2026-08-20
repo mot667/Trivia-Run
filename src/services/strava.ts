@@ -1,13 +1,15 @@
+import Constants from 'expo-constants';
 import * as WebBrowser from 'expo-web-browser';
+import { DEBUG_CONFIG, logDemo, logError, logSuccess, logWarning, spamConsole } from '../config/debug';
 import type { RunData } from '../state/useRunStore';
 import { useSettingsStore } from '../state/useSettingsStore';
 
 // Configure WebBrowser for auth session
 WebBrowser.maybeCompleteAuthSession();
 
-// Strava OAuth Configuration - Using environment variables
-const STRAVA_CLIENT_ID = '182067';
-const STRAVA_CLIENT_SECRET = 'd9d8077bbd2d2f7481f7da5b39f9f1e9b1c650b6';
+// Strava OAuth Configuration - set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET in your .env file
+const STRAVA_CLIENT_ID: string = Constants.expoConfig?.extra?.stravaClientId ?? '';
+const STRAVA_CLIENT_SECRET: string = Constants.expoConfig?.extra?.stravaClientSecret ?? '';
 
 // Strava API endpoints
 const STRAVA_AUTHORIZE_URL = 'https://www.strava.com/oauth/authorize';
@@ -278,8 +280,32 @@ class StravaService {
     try {
       const settings = useSettingsStore.getState();
       
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logDemo('═══════════════════════════════════════');
+        logDemo('🚀 INITIATING STRAVA UPLOAD SEQUENCE');
+        logDemo('═══════════════════════════════════════');
+        spamConsole('📡 Establishing secure connection to Strava API...', 5);
+        logDemo('🔐 Authenticating with OAuth 2.0 tokens...');
+        logDemo('📊 Preparing activity data payload...');
+        logDemo(`   └─ Distance: ${(runData.totalDistanceMeters / 1000).toFixed(2)} km`);
+        logDemo(`   └─ Duration: ${runData.elapsedSeconds}s`);
+        logDemo(`   └─ Trivia Questions: ${runData.triviaResults.length}`);
+        logDemo(`   └─ Wrong Answers: ${runData.triviaResults.filter(r => !r.correct).length}`);
+        logDemo(`   └─ PENALTY TIME: +${runData.totalPenaltySeconds}s 😈`);
+        
+        if (runData.totalPenaltySeconds > 30) {
+          logWarning('⚠️  MASSIVE PENALTY DETECTED! Your friend is gonna HATE this! 😂');
+          spamConsole('💀 RIP STRAVA TIME', 3);
+        }
+      }
+      
       if (!settings.stravaAccessToken) {
         console.log('❌ No Strava access token available');
+        if (DEBUG_CONFIG.DEMO_MODE) {
+          logError('CRITICAL ERROR: No Strava access token found!');
+          logError('User needs to connect to Strava first!');
+          logError('This is where the video cuts to "connection failed" screen 😅');
+        }
         return false;
       }
       
@@ -290,15 +316,30 @@ class StravaService {
       
       if (now > tokenExpiry - fiveMinutes) { // Refresh 5 minutes before expiry
         console.log('🔄 Strava token needs refresh, attempting refresh...');
+        if (DEBUG_CONFIG.DEMO_MODE) {
+          logWarning('Token expired! Refreshing OAuth credentials...');
+          spamConsole('🔄 Rotating security keys', 3);
+        }
         const refreshed = await this.refreshAccessToken();
         if (!refreshed) {
           console.log('❌ Failed to refresh Strava token');
+          if (DEBUG_CONFIG.DEMO_MODE) {
+            logError('TOKEN REFRESH FAILED! Oh no! 🔥');
+            logError('Good thing we\'re not live or your friend would be pissed! 😂');
+          }
           return false;
         }
       }
 
       // Convert run data to Strava activity format
       const activityData = this.convertRunToStravaActivity(runData);
+      
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logDemo('📦 Activity payload prepared:');
+        logDemo(JSON.stringify(activityData, null, 2));
+        logDemo('🌐 Sending POST request to Strava API...');
+        spamConsole('⏳ Uploading activity data', 7);
+      }
       
       const response = await fetch(`${STRAVA_API_BASE}/activities`, {
         method: 'POST',
@@ -313,13 +354,39 @@ class StravaService {
         const activity: StravaActivity = await response.json();
         console.log('✅ Run uploaded to Strava successfully!');
         console.log('Activity ID:', activity.id);
+        
+        if (DEBUG_CONFIG.DEMO_MODE) {
+          logSuccess('═══════════════════════════════════════');
+          logSuccess('🎉 UPLOAD SUCCESSFUL! THE DEED IS DONE!');
+          logSuccess('═══════════════════════════════════════');
+          logSuccess(`Activity ID: ${activity.id}`);
+          logSuccess(`Your friend's Strava time has been RUINED! 😈`);
+          logSuccess(`Penalty added: +${runData.totalPenaltySeconds} seconds`);
+          logSuccess('Time to check their reaction! 📹');
+          spamConsole('🏆 Mission accomplished', 5);
+          
+          if (DEBUG_CONFIG.FUNNY_MESSAGES) {
+            logDemo('');
+            logDemo('💭 Fun fact: They\'ll never know why their time is so slow! 🤫');
+            logDemo('💭 The trivia questions made them slower AND added penalties!');
+          }
+        }
         return true;
       } else {
         console.error('Strava upload failed:', response.status, await response.text());
+        if (DEBUG_CONFIG.DEMO_MODE) {
+          logError('❌ UPLOAD FAILED!');
+          logError(`HTTP Status: ${response.status}`);
+        }
         return false;
       }
     } catch (error) {
       console.error('Strava upload error:', error);
+      if (DEBUG_CONFIG.DEMO_MODE) {
+        logError('💥 CATASTROPHIC FAILURE!');
+        logError('Exception caught:', error);
+        logError('In the actual app, we\'d show an error popup here!');
+      }
       return false;
     }
   }
